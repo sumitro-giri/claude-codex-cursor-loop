@@ -1,0 +1,9 @@
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.serena/
+.claude/
+ccc-runfacts.json
+ccc-report.md
+*.zip

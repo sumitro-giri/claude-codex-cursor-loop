@@ -1,0 +1,9 @@
+# Normalize to LF in the repo and on checkout. bin/loop.js carries a shebang;
+# a CRLF shebang breaks execution on macOS and Linux.
+* text=auto eol=lf
+
+# cmd.exe batch files genuinely require CRLF.
+*.cmd text eol=crlf
+
+# Captured vendor streams are compared byte-for-byte by the parser tests.
+*.ndjson text eol=lf
