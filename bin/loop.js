@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { parseArgs } from '../src/args.js';
 import { preflight } from '../src/preflight.js';
 import { run } from '../src/run.js';
+import { exitCodeFor } from '../src/exit.js';
 
 // Short path, outside OneDrive and outside AppData (both are rejected by
 // assertSafeScratchRoot; AppData is MSIX-redirected under a packaged host).
@@ -30,7 +31,7 @@ async function main() {
   const runId = `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID().slice(0, 8)}`;
   const facts = await run({ ...opts, scratchRoot: SCRATCH_ROOT, runId });
   process.stdout.write(JSON.stringify(facts, null, 2) + '\n');
-  process.exit(facts.outcome === 'gate-failed' ? 1 : 0);
+  process.exit(exitCodeFor(facts.outcome));
 }
 
 main().catch((e) => { process.stderr.write(`fatal: ${e.stack}\n`); process.exit(3); });

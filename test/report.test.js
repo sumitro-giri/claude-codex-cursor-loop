@@ -29,3 +29,26 @@ test('writeReport emits json and markdown', () => {
   assert.deepEqual(JSON.parse(readFileSync(jsonPath, 'utf8')).runId, 'r1');
   assert.match(readFileSync(mdPath, 'utf8'), /review-ready/);
 });
+
+test('verifier findings reach both the facts and the markdown report', () => {
+  const withFindings = buildRunFacts({
+    runId: 'r2', target: 'C:/proj', dir: 'C:/ccc/w', isRepo: false, branch: 'ccc/r2',
+    iterations: [{ n: 1, changedFiles: ['a.py'], lastMessage: 'did it',
+      gate: { passed: true, results: [] },
+      verifier: { verdict: 'ISSUES', findings: 'Line 4 drops the error.' } }],
+    gateStatus: 'passed', verdict: 'ISSUES',
+    verifierFindings: 'Line 4 drops the error.',
+    outcome: 'review-ready', maxIterations: 3, gateRetries: 2,
+  });
+  assert.equal(withFindings.verifierFindings, 'Line 4 drops the error.');
+
+  const d = mkdtempSync(join(tmpdir(), 'rep2-'));
+  const { mdPath } = writeReport({ dir: d, facts: withFindings });
+  const md = readFileSync(mdPath, 'utf8');
+  assert.match(md, /## Verifier findings/);
+  assert.match(md, /Line 4 drops the error/);
+});
+
+test('facts carry an explicit null when no findings were recorded', () => {
+  assert.equal(facts.verifierFindings, null);
+});

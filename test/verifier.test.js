@@ -8,12 +8,47 @@ import {
   buildCursorArgs,
   hasVerdictEvidence,
   parseVerdict,
+  parseVerdictDetail,
   runVerifier,
+  FINDINGS_LIMIT,
 } from '../src/verifier.js';
 
 const fakeAgent = fileURLToPath(new URL('../fixtures/fake-agent.mjs', import.meta.url));
 const brokenFakeAgent = fileURLToPath(new URL('../fixtures/fake-agent-broken.mjs', import.meta.url));
 const realSamplePath = fileURLToPath(new URL('../fixtures/cursor-stream-schema-sample.ndjson', import.meta.url));
+
+test('parseVerdictDetail keeps the review text, not just the verdict', () => {
+  const stream = JSON.stringify({
+    type: 'result', subtype: 'success', is_error: false,
+    result: 'Line 4 drops the error. ISSUES',
+  }) + '\n';
+  const { verdict, text } = parseVerdictDetail(stream);
+  assert.equal(verdict, 'ISSUES');
+  assert.match(text, /Line 4 drops the error/);
+});
+
+test('parseVerdict still returns a bare verdict string', () => {
+  assert.equal(typeof parseVerdict('{"type":"result","result":"NO_BLOCKERS"}'), 'string');
+});
+
+test('runVerifier reports findings on the path where the verifier ran', async () => {
+  const r = await runVerifier({ cwd: process.cwd(), bin: process.execPath, extraArgv: [fakeAgent] });
+  assert.equal(r.verdict, 'ISSUES');
+  assert.equal(r.launchFailed, false);
+  // The reasoning must survive: a verdict alone is not actionable.
+  assert.match(r.findings, /a bug on line 4/);
+});
+
+test('runVerifier findings are capped', async () => {
+  const r = await runVerifier({ cwd: process.cwd(), bin: process.execPath, extraArgv: [fakeAgent] });
+  assert.ok(r.findings.length <= FINDINGS_LIMIT);
+});
+
+test('a failed launch reports stderr and carries no findings', async () => {
+  const r = await runVerifier({ cwd: process.cwd(), bin: process.execPath, extraArgv: [brokenFakeAgent] });
+  assert.equal(r.launchFailed, true);
+  assert.equal(r.findings, undefined);
+});
 
 test('assertUsablePrompt accepts a usable prompt', () => {
   assert.doesNotThrow(() => assertUsablePrompt('review the diff'));

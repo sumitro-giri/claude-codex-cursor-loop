@@ -1,12 +1,14 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export function buildRunFacts({ runId, target, dir, isRepo, branch, iterations, gateStatus, verdict, outcome, maxIterations, gateRetries }) {
+export function buildRunFacts({ runId, target, dir, isRepo, branch, iterations, gateStatus, verdict, verifierFindings, outcome, maxIterations, gateRetries }) {
   return {
     runId, target, dir, isRepo, branch,
     model: { executor: 'gpt-5.6-sol', executorEffort: 'xhigh', verifier: 'cursor-grok-4.5-high' },
     limits: { maxIterations, gateRetries },
-    iterations, gateStatus, verdict, outcome,
+    iterations, gateStatus, verdict,
+    verifierFindings: verifierFindings ?? null,
+    outcome,
   };
 }
 
@@ -29,6 +31,9 @@ export function writeReport({ dir, facts }) {
     ``,
     `## Why / reasoning`,
     last.lastMessage ?? '(no executor message)',
+    ``,
+    `## Verifier findings`,
+    facts.verifierFindings || '(none recorded)',
     ``,
   ].join('\n');
   writeFileSync(mdPath, md);

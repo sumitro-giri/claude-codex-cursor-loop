@@ -25,6 +25,24 @@ const writingExecutor = async ({ cwd }) => {
 };
 const noopExecutor = async () => ({ changedFiles: [], lastMessage: 'nothing to do' });
 
+test('verifier findings are lifted into the run facts', async () => {
+  const scr = scratch();
+  const facts = await run({
+    task: 'do', target: makeTarget(), gate: [], maxIterations: 1, gateRetries: 2,
+    scratchRoot: scr, runId: 'f1',
+    adapters: {
+      runExecutor: writingExecutor,
+      runGate: async () => ({ passed: true, results: [] }),
+      runVerifier: async () => ({
+        verdict: 'ISSUES', launchFailed: false, findings: 'Line 4 drops the error.',
+      }),
+    },
+  });
+  assert.equal(facts.verdict, 'ISSUES');
+  assert.equal(facts.verifierFindings, 'Line 4 drops the error.');
+  rmSync(scr, { recursive: true, force: true });
+});
+
 test('green gate + clean verify → review-ready, verifier launched once', async () => {
   let launches = 0;
   const scr = scratch();

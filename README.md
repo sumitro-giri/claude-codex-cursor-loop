@@ -88,11 +88,20 @@ node bin/loop.js run --task <plan.md> --target <folder> --gate <gate.json> [--ma
 | `review-ready` | gate green, diff produced, verdict recorded | 0 |
 | `no-op` | executor changed nothing | 0 |
 | `gate-failed` | a gate command exited non-zero | 1 |
-| `verifier-failed` | Cursor exited non-zero with no result or assistant event | 3 |
+| `verifier-failed` | Cursor exited non-zero with no result or assistant event | 4 |
 | — | preflight or argument failure | 2 |
+| — | unexpected fatal error, or an unrecognised outcome | 3 |
+
+An unrecognised outcome exits 3 rather than 0, so an outcome added later cannot silently
+become a success.
 
 Each run writes `ccc-runfacts.json` and `ccc-report.md` into the isolated directory, plus a
 branch and a diff to review.
+
+When the verifier actually runs, its review text is retained as `verifierFindings` in
+`ccc-runfacts.json` and printed under **Verifier findings** in `ccc-report.md`. The prompt
+asks the verifier to list the problems it finds; an `ISSUES` verdict stripped of that
+reasoning tells you something is wrong but not what.
 
 ### Iterating
 

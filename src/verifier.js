@@ -27,7 +27,10 @@ export function buildCursorArgs({ model = 'cursor-grok-4.5-high', prompt = DEFAU
   return args;
 }
 
-export function parseVerdict(streamText) {
+// The prompt asks the verifier to "briefly list the problems", so an ISSUES verdict
+// carries reasoning worth keeping. parseVerdict answers only "may I treat this as
+// clean?"; this returns that answer AND the text it was derived from.
+export function parseVerdictDetail(streamText) {
   let resultText = null;
   let lastAssistant = '';
   for (const line of streamText.split('\n')) {
@@ -44,7 +47,11 @@ export function parseVerdict(streamText) {
     }
   }
   const text = resultText ?? lastAssistant;
-  return /NO_BLOCKERS/.test(text) ? 'NO_BLOCKERS' : 'ISSUES';
+  return { verdict: /NO_BLOCKERS/.test(text) ? 'NO_BLOCKERS' : 'ISSUES', text };
+}
+
+export function parseVerdict(streamText) {
+  return parseVerdictDetail(streamText).verdict;
 }
 
 export function hasVerdictEvidence(streamText) {
@@ -58,13 +65,19 @@ export function hasVerdictEvidence(streamText) {
   return false;
 }
 
+// Cap on retained review text. Long enough for a real list of findings, short
+// enough that ccc-runfacts.json stays readable.
+export const FINDINGS_LIMIT = 4000;
+
 export async function runVerifier({ cwd, bin = 'agent', prompt = DEFAULT_PROMPT, extraArgv = [] }) {
   const args = [...extraArgv, ...buildCursorArgs({ prompt })];
   const r = await spawnCapture(bin, args, { cwd });
-  const verdict = parseVerdict(r.stdout);
+  const { verdict, text } = parseVerdictDetail(r.stdout);
   const exitCode = r.code;
   const launchFailed = exitCode !== 0 && !hasVerdictEvidence(r.stdout);
+  // A verdict without its reasoning is not actionable: report the findings on the
+  // path where the verifier actually ran, mirroring how stderr is kept when it did not.
   return launchFailed
     ? { verdict, exitCode, launchFailed, stderr: r.stderr.slice(0, 500) }
-    : { verdict, exitCode, launchFailed };
+    : { verdict, exitCode, launchFailed, findings: text.trim().slice(0, FINDINGS_LIMIT) };
 }

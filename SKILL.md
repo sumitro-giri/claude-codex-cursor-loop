@@ -15,7 +15,8 @@ The controller (this Claude session) authors a plan, then invokes:
 - Output: `ccc-runfacts.json` + `ccc-report.md` in the isolated dir, plus a branch + diff to review.
 - The command refuses to report success over a red gate. Review the report, then iterate or accept.
 - **Outcomes:** `review-ready`, `no-op`, `gate-failed`, or `verifier-failed` when Cursor exits non-zero without producing a result or assistant event.
-- **Exit codes:** `0` on review-ready or no-op, `1` on gate-failed, `2` on preflight/arg failure, `3` on an unexpected fatal error.
+- **Exit codes:** `0` on review-ready or no-op, `1` on gate-failed, `2` on preflight/arg failure, `3` on an unexpected fatal error or unrecognised outcome, `4` on verifier-failed.
+- When the verifier runs, its review text is kept as `verifierFindings` in `ccc-runfacts.json` and printed under **Verifier findings** in `ccc-report.md`. An `ISSUES` verdict without its reasoning is not actionable.
 - The Cursor verifier binary is `agent` (the Cursor Agent CLI).
 
 ## Iterating

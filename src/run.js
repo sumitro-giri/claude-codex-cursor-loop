@@ -70,8 +70,10 @@ export async function run(opts) {
     break; // one checkpoint: hand back to the controller after the first reviewed pass
   }
 
+  const verifierFindings = iterations.at(-1)?.verifier?.findings ?? null;
   const facts = buildRunFacts({ runId, target, dir: iso.dir, isRepo: iso.isRepo,
-    branch: iso.branch, iterations, gateStatus, verdict, outcome, maxIterations, gateRetries });
+    branch: iso.branch, iterations, gateStatus, verdict, verifierFindings, outcome,
+    maxIterations, gateRetries });
   writeReport({ dir: iso.dir, facts });
   return facts;
 }
