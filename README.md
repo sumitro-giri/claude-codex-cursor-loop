@@ -145,7 +145,7 @@ and a verdict.
 node --test
 ```
 
-48 tests, zero runtime dependencies, no build step. `fixtures/` holds real captured
+60 tests, zero runtime dependencies, no build step. `fixtures/` holds real captured
 `codex` and `cursor-agent` NDJSON streams so the parsers are tested against actual vendor
 output rather than invented shapes.
 
